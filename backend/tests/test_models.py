@@ -8,20 +8,18 @@ These tests verify:
 """
 
 import pytest
+from models import Course, CourseChunk, Lesson
 from pydantic import ValidationError
-from models import Course, Lesson, CourseChunk
-
 
 # ============================================================================
 # Lesson Model Tests
 # ============================================================================
 
+
 def test_lesson_creation():
     """Test creating a valid Lesson"""
     lesson = Lesson(
-        lesson_number=1,
-        title="Introduction to Testing",
-        lesson_link="https://example.com/lesson1"
+        lesson_number=1, title="Introduction to Testing", lesson_link="https://example.com/lesson1"
     )
 
     assert lesson.lesson_number == 1
@@ -31,10 +29,7 @@ def test_lesson_creation():
 
 def test_lesson_optional_link():
     """Test Lesson without optional lesson_link"""
-    lesson = Lesson(
-        lesson_number=2,
-        title="Advanced Topics"
-    )
+    lesson = Lesson(lesson_number=2, title="Advanced Topics")
 
     assert lesson.lesson_number == 2
     assert lesson.title == "Advanced Topics"
@@ -44,34 +39,29 @@ def test_lesson_optional_link():
 def test_lesson_validation_errors():
     """Test Lesson validation with invalid types"""
     with pytest.raises(ValidationError):
-        Lesson(
-            lesson_number="not_a_number",  # Should be int
-            title="Test"
-        )
+        Lesson(lesson_number="not_a_number", title="Test")  # Should be int
 
     with pytest.raises(ValidationError):
-        Lesson(
-            lesson_number=1,
-            title=123  # Should be string
-        )
+        Lesson(lesson_number=1, title=123)  # Should be string
 
 
 # ============================================================================
 # Course Model Tests
 # ============================================================================
 
+
 def test_course_creation():
     """Test creating a valid Course with lessons"""
     lessons = [
         Lesson(lesson_number=0, title="Intro", lesson_link="https://example.com/l0"),
-        Lesson(lesson_number=1, title="Basics", lesson_link="https://example.com/l1")
+        Lesson(lesson_number=1, title="Basics", lesson_link="https://example.com/l1"),
     ]
 
     course = Course(
         title="Test Course",
         course_link="https://example.com/course",
         instructor="Test Instructor",
-        lessons=lessons
+        lessons=lessons,
     )
 
     assert course.title == "Test Course"
@@ -84,9 +74,7 @@ def test_course_creation():
 
 def test_course_optional_fields():
     """Test Course without optional course_link and instructor"""
-    course = Course(
-        title="Minimal Course"
-    )
+    course = Course(title="Minimal Course")
 
     assert course.title == "Minimal Course"
     assert course.course_link is None
@@ -97,9 +85,7 @@ def test_course_optional_fields():
 def test_course_empty_lessons():
     """Test Course with empty lessons list"""
     course = Course(
-        title="Course Without Lessons",
-        course_link="https://example.com/course",
-        lessons=[]
+        title="Course Without Lessons", course_link="https://example.com/course", lessons=[]
     )
 
     assert course.title == "Course Without Lessons"
@@ -109,20 +95,16 @@ def test_course_empty_lessons():
 def test_course_validation():
     """Test Course validation with invalid types"""
     with pytest.raises(ValidationError):
-        Course(
-            title=12345  # Should be string
-        )
+        Course(title=12345)  # Should be string
 
     with pytest.raises(ValidationError):
-        Course(
-            title="Valid Title",
-            lessons="not_a_list"  # Should be List[Lesson]
-        )
+        Course(title="Valid Title", lessons="not_a_list")  # Should be List[Lesson]
 
 
 # ============================================================================
 # CourseChunk Model Tests
 # ============================================================================
+
 
 def test_course_chunk_creation():
     """Test creating a valid CourseChunk"""
@@ -130,7 +112,7 @@ def test_course_chunk_creation():
         content="This is sample course content about RAG systems.",
         course_title="Introduction to RAG",
         lesson_number=1,
-        chunk_index=5
+        chunk_index=5,
     )
 
     assert chunk.content == "This is sample course content about RAG systems."
@@ -144,7 +126,7 @@ def test_course_chunk_optional_lesson_number():
     chunk = CourseChunk(
         content="General course content not tied to a specific lesson.",
         course_title="General Course",
-        chunk_index=0
+        chunk_index=0,
     )
 
     assert chunk.content == "General course content not tied to a specific lesson."
@@ -156,17 +138,11 @@ def test_course_chunk_optional_lesson_number():
 def test_course_chunk_validation():
     """Test CourseChunk validation with invalid fields"""
     with pytest.raises(ValidationError):
-        CourseChunk(
-            content=123,  # Should be string
-            course_title="Test",
-            chunk_index=0
-        )
+        CourseChunk(content=123, course_title="Test", chunk_index=0)  # Should be string
 
     with pytest.raises(ValidationError):
         CourseChunk(
-            content="Valid content",
-            course_title="Test",
-            chunk_index="not_an_int"  # Should be int
+            content="Valid content", course_title="Test", chunk_index="not_an_int"  # Should be int
         )
 
     with pytest.raises(ValidationError):
@@ -174,5 +150,5 @@ def test_course_chunk_validation():
             content="Valid content",
             course_title="Test",
             lesson_number="not_an_int",  # Should be int or None
-            chunk_index=0
+            chunk_index=0,
         )

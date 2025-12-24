@@ -11,16 +11,17 @@ These tests verify:
 - Edge cases (empty content, malformed docs)
 """
 
-import pytest
-import tempfile
 import os
-from document_processor import DocumentProcessor
-from models import Course, Lesson, CourseChunk
+import tempfile
 
+import pytest
+from document_processor import DocumentProcessor
+from models import Course, CourseChunk, Lesson
 
 # ============================================================================
 # File Reading Tests
 # ============================================================================
+
 
 def test_read_file_utf8(tmp_path):
     """Test reading a UTF-8 encoded file"""
@@ -29,7 +30,7 @@ def test_read_file_utf8(tmp_path):
     # Create a temp file
     test_file = tmp_path / "test.txt"
     content = "This is a test file with UTF-8 encoding."
-    test_file.write_text(content, encoding='utf-8')
+    test_file.write_text(content, encoding="utf-8")
 
     result = processor.read_file(str(test_file))
 
@@ -53,6 +54,7 @@ def test_read_file_encoding_errors(tmp_path):
 # ============================================================================
 # Text Chunking Tests
 # ============================================================================
+
 
 def test_chunk_text_basic():
     """Test basic sentence-based chunking"""
@@ -143,6 +145,7 @@ def test_chunk_text_single_long_sentence():
 # ============================================================================
 # Course Document Processing Tests
 # ============================================================================
+
 
 def test_process_course_document_full(tmp_path, sample_course_document):
     """Test processing a complete course document"""
@@ -237,13 +240,16 @@ def test_process_course_document_chunk_creation(tmp_path):
     """Test that CourseChunk objects are created correctly"""
     processor = DocumentProcessor(chunk_size=800, chunk_overlap=100)
 
-    doc_content = """Course Title: Chunking Test
+    doc_content = (
+        """Course Title: Chunking Test
 Course Link: https://example.com
 Course Instructor: Test
 
 Lesson 0: Test Lesson
 Lesson Link: https://example.com/l0
-""" + "Content sentence. " * 50  # Make sure we have enough content to create chunks
+"""
+        + "Content sentence. " * 50
+    )  # Make sure we have enough content to create chunks
 
     doc_path = tmp_path / "course.txt"
     doc_path.write_text(doc_content)
@@ -261,12 +267,15 @@ def test_process_course_document_chunk_indexing(tmp_path):
     """Test that chunk indices are sequential"""
     processor = DocumentProcessor(chunk_size=100, chunk_overlap=10)
 
-    doc_content = """Course Title: Index Test
+    doc_content = (
+        """Course Title: Index Test
 Course Link: https://example.com
 Course Instructor: Test
 
 Lesson 0: Lesson
-""" + "Sentence. " * 100  # Lots of content to create multiple chunks
+"""
+        + "Sentence. " * 100
+    )  # Lots of content to create multiple chunks
 
     doc_path = tmp_path / "course.txt"
     doc_path.write_text(doc_content)

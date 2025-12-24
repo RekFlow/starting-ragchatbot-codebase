@@ -8,29 +8,32 @@ This module provides:
 - Test configuration
 """
 
-import pytest
 import sys
 from pathlib import Path
-from unittest.mock import Mock, MagicMock
 from typing import List
+from unittest.mock import MagicMock, Mock
+
+import pytest
 
 # Add backend to Python path for imports
 backend_path = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_path))
 
-from models import Course, Lesson, CourseChunk
-from vector_store import SearchResults, VectorStore
 from config import Config
-
+from models import Course, CourseChunk, Lesson
+from vector_store import SearchResults, VectorStore
 
 # ============================================================================
 # Pytest Configuration
 # ============================================================================
 
+
 def pytest_configure(config):
     """Configure pytest with custom markers"""
     config.addinivalue_line("markers", "unit: Unit tests (fast, isolated)")
-    config.addinivalue_line("markers", "integration: Integration tests (slower, use real components)")
+    config.addinivalue_line(
+        "markers", "integration: Integration tests (slower, use real components)"
+    )
     config.addinivalue_line("markers", "slow: Slow tests that can be skipped")
 
 
@@ -44,6 +47,7 @@ def disable_chroma_telemetry(monkeypatch):
 # Sample Data Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def sample_course():
     """Basic course with 3 lessons for testing"""
@@ -53,21 +57,17 @@ def sample_course():
         instructor="John Doe",
         lessons=[
             Lesson(
-                lesson_number=0,
-                title="Introduction",
-                lesson_link="https://example.com/lesson0"
+                lesson_number=0, title="Introduction", lesson_link="https://example.com/lesson0"
             ),
             Lesson(
-                lesson_number=1,
-                title="Vector Stores",
-                lesson_link="https://example.com/lesson1"
+                lesson_number=1, title="Vector Stores", lesson_link="https://example.com/lesson1"
             ),
             Lesson(
                 lesson_number=2,
                 title="Retrieval Techniques",
-                lesson_link="https://example.com/lesson2"
-            )
-        ]
+                lesson_link="https://example.com/lesson2",
+            ),
+        ],
     )
 
 
@@ -79,20 +79,20 @@ def sample_course_chunks(sample_course):
             content="Lesson 0 content: RAG stands for Retrieval-Augmented Generation. It combines retrieval with generation.",
             course_title=sample_course.title,
             lesson_number=0,
-            chunk_index=0
+            chunk_index=0,
         ),
         CourseChunk(
             content="Vector stores enable semantic search over documents using embeddings.",
             course_title=sample_course.title,
             lesson_number=1,
-            chunk_index=1
+            chunk_index=1,
         ),
         CourseChunk(
             content="Retrieval techniques include dense retrieval, sparse retrieval, and hybrid approaches.",
             course_title=sample_course.title,
             lesson_number=2,
-            chunk_index=2
-        )
+            chunk_index=2,
+        ),
     ]
 
 
@@ -128,15 +128,16 @@ def another_course():
             Lesson(
                 lesson_number=0,
                 title="Neural Networks",
-                lesson_link="https://example.com/ml-lesson0"
+                lesson_link="https://example.com/ml-lesson0",
             )
-        ]
+        ],
     )
 
 
 # ============================================================================
 # Temporary Directory Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def temp_chroma_path(tmp_path):
@@ -164,24 +165,17 @@ def test_config(tmp_path):
 # Mock ChromaDB Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def mock_chroma_collection():
     """Mock ChromaDB collection with controlled responses"""
     mock_collection = MagicMock()
 
     # Default query response (empty)
-    mock_collection.query.return_value = {
-        'documents': [[]],
-        'metadatas': [[]],
-        'distances': [[]]
-    }
+    mock_collection.query.return_value = {"documents": [[]], "metadatas": [[]], "distances": [[]]}
 
     # Default get response (empty)
-    mock_collection.get.return_value = {
-        'ids': [],
-        'documents': [],
-        'metadatas': []
-    }
+    mock_collection.get.return_value = {"ids": [], "documents": [], "metadatas": []}
 
     return mock_collection
 
@@ -199,7 +193,7 @@ def mock_embedding_function():
     """Mock embedding function that returns deterministic vectors"""
     mock_func = MagicMock()
     # Return consistent 384-dimensional vectors (MiniLM default)
-    mock_func.return_value = lambda texts: [[0.1 + i*0.01] * 384 for i in range(len(texts))]
+    mock_func.return_value = lambda texts: [[0.1 + i * 0.01] * 384 for i in range(len(texts))]
     return mock_func
 
 
@@ -207,28 +201,21 @@ def mock_embedding_function():
 # Mock SearchResults Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def mock_search_results():
     """Mock successful search results"""
     return SearchResults(
         documents=[
             "RAG systems combine retrieval with generation.",
-            "Vector stores enable semantic search."
+            "Vector stores enable semantic search.",
         ],
         metadata=[
-            {
-                "course_title": "Introduction to RAG Systems",
-                "lesson_number": 0,
-                "chunk_index": 0
-            },
-            {
-                "course_title": "Introduction to RAG Systems",
-                "lesson_number": 1,
-                "chunk_index": 1
-            }
+            {"course_title": "Introduction to RAG Systems", "lesson_number": 0, "chunk_index": 0},
+            {"course_title": "Introduction to RAG Systems", "lesson_number": 1, "chunk_index": 1},
         ],
         distances=[0.15, 0.25],
-        error=None
+        error=None,
     )
 
 
@@ -247,6 +234,7 @@ def mock_error_search_results():
 # ============================================================================
 # Mock Anthropic API Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def mock_anthropic_client():
@@ -291,7 +279,7 @@ def mock_anthropic_final_response():
     mock_response.content = [
         Mock(
             text="Based on the search results, RAG stands for Retrieval-Augmented Generation.",
-            type="text"
+            type="text",
         )
     ]
     mock_response.stop_reason = "end_turn"
@@ -325,12 +313,7 @@ def mock_anthropic_two_round_responses():
     tool_response_1 = Mock()
     tool_response_1.stop_reason = "tool_use"
     tool_response_1.content = [
-        Mock(
-            type="tool_use",
-            id="tool_1",
-            name="get_course_outline",
-            input={"course_name": "RAG"}
-        )
+        Mock(type="tool_use", id="tool_1", name="get_course_outline", input={"course_name": "RAG"})
     ]
     tool_response_1.usage = Mock(input_tokens=100, output_tokens=30)
 
@@ -342,7 +325,7 @@ def mock_anthropic_two_round_responses():
             type="tool_use",
             id="tool_2",
             name="search_course_content",
-            input={"query": "embeddings", "course_name": "RAG"}
+            input={"query": "embeddings", "course_name": "RAG"},
         )
     ]
     tool_response_2.usage = Mock(input_tokens=150, output_tokens=35)
@@ -350,9 +333,7 @@ def mock_anthropic_two_round_responses():
     # Final: Text response
     final_response = Mock()
     final_response.stop_reason = "end_turn"
-    final_response.content = [
-        Mock(text="Final answer synthesizing both results", type="text")
-    ]
+    final_response.content = [Mock(text="Final answer synthesizing both results", type="text")]
     final_response.usage = Mock(input_tokens=200, output_tokens=60)
 
     return [tool_response_1, tool_response_2, final_response]
@@ -365,32 +346,27 @@ def mock_anthropic_max_rounds_responses():
     tool_response_1 = Mock()
     tool_response_1.stop_reason = "tool_use"
     tool_response_1.content = [
-        Mock(type="tool_use", id="tool_1", name="search_course_content",
-             input={"query": "test1"})
+        Mock(type="tool_use", id="tool_1", name="search_course_content", input={"query": "test1"})
     ]
 
     # Round 2: Tool use
     tool_response_2 = Mock()
     tool_response_2.stop_reason = "tool_use"
     tool_response_2.content = [
-        Mock(type="tool_use", id="tool_2", name="search_course_content",
-             input={"query": "test2"})
+        Mock(type="tool_use", id="tool_2", name="search_course_content", input={"query": "test2"})
     ]
 
     # Round 3: Tool use (should trigger max rounds limit)
     tool_response_3 = Mock()
     tool_response_3.stop_reason = "tool_use"
     tool_response_3.content = [
-        Mock(type="tool_use", id="tool_3", name="search_course_content",
-             input={"query": "test3"})
+        Mock(type="tool_use", id="tool_3", name="search_course_content", input={"query": "test3"})
     ]
 
     # Forced final response (without tools)
     final_response = Mock()
     final_response.stop_reason = "end_turn"
-    final_response.content = [
-        Mock(text="Forced final answer after max rounds", type="text")
-    ]
+    final_response.content = [Mock(text="Forced final answer after max rounds", type="text")]
 
     return [tool_response_1, tool_response_2, tool_response_3, final_response]
 
@@ -399,13 +375,14 @@ def mock_anthropic_max_rounds_responses():
 # Helper Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def mock_vector_store(mock_chroma_client, temp_chroma_path):
     """VectorStore with mocked ChromaDB client"""
     from unittest.mock import patch
 
-    with patch('chromadb.PersistentClient', return_value=mock_chroma_client):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
+    with patch("chromadb.PersistentClient", return_value=mock_chroma_client):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
             store = VectorStore(temp_chroma_path, "all-MiniLM-L6-v2", max_results=5)
             yield store
 
@@ -414,16 +391,28 @@ def mock_vector_store(mock_chroma_client, temp_chroma_path):
 def sample_chroma_query_response():
     """Sample ChromaDB query response structure"""
     return {
-        'documents': [[
-            'RAG systems combine retrieval with generation.',
-            'Vector stores enable semantic search.'
-        ]],
-        'metadatas': [[
-            {'course_title': 'Introduction to RAG Systems', 'lesson_number': 0, 'chunk_index': 0},
-            {'course_title': 'Introduction to RAG Systems', 'lesson_number': 1, 'chunk_index': 1}
-        ]],
-        'distances': [[0.15, 0.25]],
-        'ids': [['chunk_0', 'chunk_1']]
+        "documents": [
+            [
+                "RAG systems combine retrieval with generation.",
+                "Vector stores enable semantic search.",
+            ]
+        ],
+        "metadatas": [
+            [
+                {
+                    "course_title": "Introduction to RAG Systems",
+                    "lesson_number": 0,
+                    "chunk_index": 0,
+                },
+                {
+                    "course_title": "Introduction to RAG Systems",
+                    "lesson_number": 1,
+                    "chunk_index": 1,
+                },
+            ]
+        ],
+        "distances": [[0.15, 0.25]],
+        "ids": [["chunk_0", "chunk_1"]],
     }
 
 
@@ -432,23 +421,27 @@ def sample_chroma_get_response(sample_course):
     """Sample ChromaDB get response for course catalog"""
     import json
 
-    lessons_json = json.dumps([
-        {
-            "lesson_number": lesson.lesson_number,
-            "lesson_title": lesson.title,
-            "lesson_link": lesson.lesson_link
-        }
-        for lesson in sample_course.lessons
-    ])
+    lessons_json = json.dumps(
+        [
+            {
+                "lesson_number": lesson.lesson_number,
+                "lesson_title": lesson.title,
+                "lesson_link": lesson.lesson_link,
+            }
+            for lesson in sample_course.lessons
+        ]
+    )
 
     return {
-        'ids': [sample_course.title],
-        'documents': [sample_course.title],
-        'metadatas': [{
-            'title': sample_course.title,
-            'instructor': sample_course.instructor,
-            'course_link': sample_course.course_link,
-            'lessons_json': lessons_json,
-            'lesson_count': len(sample_course.lessons)
-        }]
+        "ids": [sample_course.title],
+        "documents": [sample_course.title],
+        "metadatas": [
+            {
+                "title": sample_course.title,
+                "instructor": sample_course.instructor,
+                "course_link": sample_course.course_link,
+                "lessons_json": lessons_json,
+                "lesson_count": len(sample_course.lessons),
+            }
+        ],
     }

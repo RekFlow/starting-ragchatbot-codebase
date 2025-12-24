@@ -10,22 +10,23 @@ These tests verify:
 - End-to-end pipeline
 """
 
-import pytest
 import os
-from unittest.mock import Mock, MagicMock, patch
-from rag_system import RAGSystem
-from models import Course, Lesson
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+from models import Course, Lesson
+from rag_system import RAGSystem
 
 # ============================================================================
 # Initialization Tests
 # ============================================================================
 
+
 def test_rag_system_initialization(test_config):
     """Test RAGSystem initializes all components"""
-    with patch('chromadb.PersistentClient'):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
-            with patch('anthropic.Anthropic'):
+    with patch("chromadb.PersistentClient"):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
+            with patch("anthropic.Anthropic"):
                 rag = RAGSystem(test_config)
 
                 assert rag.document_processor is not None
@@ -37,28 +38,29 @@ def test_rag_system_initialization(test_config):
 
 def test_rag_system_tool_registration(test_config):
     """Test that search and outline tools are registered"""
-    with patch('chromadb.PersistentClient'):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
-            with patch('anthropic.Anthropic'):
+    with patch("chromadb.PersistentClient"):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
+            with patch("anthropic.Anthropic"):
                 rag = RAGSystem(test_config)
 
                 tool_defs = rag.tool_manager.get_tool_definitions()
 
                 assert len(tool_defs) == 2
-                tool_names = [t['name'] for t in tool_defs]
-                assert 'search_course_content' in tool_names
-                assert 'get_course_outline' in tool_names
+                tool_names = [t["name"] for t in tool_defs]
+                assert "search_course_content" in tool_names
+                assert "get_course_outline" in tool_names
 
 
 # ============================================================================
 # Single Document Tests
 # ============================================================================
 
+
 def test_add_course_document(test_config, tmp_path, sample_course_document):
     """Test adding a single course document"""
-    with patch('chromadb.PersistentClient'):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
-            with patch('anthropic.Anthropic'):
+    with patch("chromadb.PersistentClient"):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
+            with patch("anthropic.Anthropic"):
                 rag = RAGSystem(test_config)
 
                 # Write sample document
@@ -78,11 +80,13 @@ def test_add_course_document(test_config, tmp_path, sample_course_document):
                 rag.vector_store.add_course_content.assert_called_once()
 
 
-def test_add_course_document_returns_course_and_chunks(test_config, tmp_path, sample_course_document):
+def test_add_course_document_returns_course_and_chunks(
+    test_config, tmp_path, sample_course_document
+):
     """Test that add_course_document returns correct values"""
-    with patch('chromadb.PersistentClient'):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
-            with patch('anthropic.Anthropic'):
+    with patch("chromadb.PersistentClient"):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
+            with patch("anthropic.Anthropic"):
                 rag = RAGSystem(test_config)
 
                 doc_path = tmp_path / "course.txt"
@@ -101,9 +105,9 @@ def test_add_course_document_returns_course_and_chunks(test_config, tmp_path, sa
 
 def test_add_course_document_error_handling(test_config):
     """Test error handling for invalid file"""
-    with patch('chromadb.PersistentClient'):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
-            with patch('anthropic.Anthropic'):
+    with patch("chromadb.PersistentClient"):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
+            with patch("anthropic.Anthropic"):
                 rag = RAGSystem(test_config)
 
                 course, chunks = rag.add_course_document("/nonexistent/file.txt")
@@ -117,22 +121,25 @@ def test_add_course_document_error_handling(test_config):
 # Folder Processing Tests
 # ============================================================================
 
+
 def test_add_course_folder(test_config, tmp_path, sample_course_document, another_course):
     """Test processing multiple documents from folder"""
-    with patch('chromadb.PersistentClient'):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
-            with patch('anthropic.Anthropic'):
+    with patch("chromadb.PersistentClient"):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
+            with patch("anthropic.Anthropic"):
                 rag = RAGSystem(test_config)
 
                 # Create multiple course files
                 (tmp_path / "course1.txt").write_text(sample_course_document)
-                (tmp_path / "course2.txt").write_text("""Course Title: Second Course
+                (tmp_path / "course2.txt").write_text(
+                    """Course Title: Second Course
 Course Link: https://example.com
 Course Instructor: Teacher
 
 Lesson 0: Intro
 Content here.
-""")
+"""
+                )
 
                 rag.vector_store.add_course_metadata = Mock()
                 rag.vector_store.add_course_content = Mock()
@@ -146,9 +153,9 @@ Content here.
 
 def test_add_course_folder_clear_existing(test_config, tmp_path, sample_course_document):
     """Test clear_existing flag"""
-    with patch('chromadb.PersistentClient'):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
-            with patch('anthropic.Anthropic'):
+    with patch("chromadb.PersistentClient"):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
+            with patch("anthropic.Anthropic"):
                 rag = RAGSystem(test_config)
 
                 (tmp_path / "course.txt").write_text(sample_course_document)
@@ -166,9 +173,9 @@ def test_add_course_folder_clear_existing(test_config, tmp_path, sample_course_d
 
 def test_add_course_folder_skip_duplicates(test_config, tmp_path, sample_course_document):
     """Test that duplicate courses are skipped"""
-    with patch('chromadb.PersistentClient'):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
-            with patch('anthropic.Anthropic'):
+    with patch("chromadb.PersistentClient"):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
+            with patch("anthropic.Anthropic"):
                 rag = RAGSystem(test_config)
 
                 (tmp_path / "course.txt").write_text(sample_course_document)
@@ -188,9 +195,9 @@ def test_add_course_folder_skip_duplicates(test_config, tmp_path, sample_course_
 
 def test_add_course_folder_nonexistent_path(test_config):
     """Test handling of nonexistent folder"""
-    with patch('chromadb.PersistentClient'):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
-            with patch('anthropic.Anthropic'):
+    with patch("chromadb.PersistentClient"):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
+            with patch("anthropic.Anthropic"):
                 rag = RAGSystem(test_config)
 
                 courses, chunks = rag.add_course_folder("/nonexistent/folder")
@@ -203,14 +210,17 @@ def test_add_course_folder_nonexistent_path(test_config):
 # Query Tests
 # ============================================================================
 
+
 def test_query_without_session(test_config, mock_search_results):
     """Test query without session ID"""
-    with patch('chromadb.PersistentClient'):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
-            with patch('anthropic.Anthropic') as mock_anthropic:
+    with patch("chromadb.PersistentClient"):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
+            with patch("anthropic.Anthropic") as mock_anthropic:
                 # Mock AI response
                 mock_response = Mock()
-                mock_response.content = [Mock(text="RAG stands for Retrieval-Augmented Generation.", type="text")]
+                mock_response.content = [
+                    Mock(text="RAG stands for Retrieval-Augmented Generation.", type="text")
+                ]
                 mock_response.stop_reason = "end_turn"
                 mock_anthropic.return_value.messages.create.return_value = mock_response
 
@@ -225,9 +235,9 @@ def test_query_without_session(test_config, mock_search_results):
 
 def test_query_with_session(test_config):
     """Test query with session ID includes history"""
-    with patch('chromadb.PersistentClient'):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
-            with patch('anthropic.Anthropic') as mock_anthropic:
+    with patch("chromadb.PersistentClient"):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
+            with patch("anthropic.Anthropic") as mock_anthropic:
                 mock_response = Mock()
                 mock_response.content = [Mock(text="Follow-up answer", type="text")]
                 mock_response.stop_reason = "end_turn"
@@ -246,13 +256,17 @@ def test_query_with_session(test_config):
 
 def test_query_with_tool_execution(test_config, mock_search_results):
     """Test query that triggers tool use"""
-    with patch('chromadb.PersistentClient'):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
-            with patch('anthropic.Anthropic') as mock_anthropic:
+    with patch("chromadb.PersistentClient"):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
+            with patch("anthropic.Anthropic") as mock_anthropic:
                 # Mock tool use response
                 tool_response = Mock()
-                tool_block = Mock(type="tool_use", id="tool_1", name="search_course_content",
-                                input={"query": "RAG"})
+                tool_block = Mock(
+                    type="tool_use",
+                    id="tool_1",
+                    name="search_course_content",
+                    input={"query": "RAG"},
+                )
                 tool_response.content = [tool_block]
                 tool_response.stop_reason = "tool_use"
 
@@ -261,13 +275,20 @@ def test_query_with_tool_execution(test_config, mock_search_results):
                 final_response.content = [Mock(text="Based on search results...", type="text")]
                 final_response.stop_reason = "end_turn"
 
-                mock_anthropic.return_value.messages.create.side_effect = [tool_response, final_response]
+                mock_anthropic.return_value.messages.create.side_effect = [
+                    tool_response,
+                    final_response,
+                ]
 
                 rag = RAGSystem(test_config)
 
                 # Patch the vector store's search method directly
-                with patch.object(rag.vector_store, 'search', return_value=mock_search_results):
-                    with patch.object(rag.vector_store, 'get_lesson_link', return_value="https://example.com/lesson"):
+                with patch.object(rag.vector_store, "search", return_value=mock_search_results):
+                    with patch.object(
+                        rag.vector_store,
+                        "get_lesson_link",
+                        return_value="https://example.com/lesson",
+                    ):
                         response, sources = rag.query("What is RAG?")
 
                         # Should return a response
@@ -276,12 +297,16 @@ def test_query_with_tool_execution(test_config, mock_search_results):
 
 def test_query_returns_sources(test_config, mock_search_results):
     """Test that query returns sources from tool execution"""
-    with patch('chromadb.PersistentClient'):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
-            with patch('anthropic.Anthropic') as mock_anthropic:
+    with patch("chromadb.PersistentClient"):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
+            with patch("anthropic.Anthropic") as mock_anthropic:
                 tool_response = Mock()
-                tool_block = Mock(type="tool_use", id="tool_1", name="search_course_content",
-                                input={"query": "test"})
+                tool_block = Mock(
+                    type="tool_use",
+                    id="tool_1",
+                    name="search_course_content",
+                    input={"query": "test"},
+                )
                 tool_response.content = [tool_block]
                 tool_response.stop_reason = "tool_use"
 
@@ -289,11 +314,16 @@ def test_query_returns_sources(test_config, mock_search_results):
                 final_response.content = [Mock(text="Answer", type="text")]
                 final_response.stop_reason = "end_turn"
 
-                mock_anthropic.return_value.messages.create.side_effect = [tool_response, final_response]
+                mock_anthropic.return_value.messages.create.side_effect = [
+                    tool_response,
+                    final_response,
+                ]
 
                 rag = RAGSystem(test_config)
                 rag.search_tool.store.search = Mock(return_value=mock_search_results)
-                rag.search_tool.store.get_lesson_link = Mock(return_value="https://example.com/lesson")
+                rag.search_tool.store.get_lesson_link = Mock(
+                    return_value="https://example.com/lesson"
+                )
 
                 response, sources = rag.query("Test query")
 
@@ -304,9 +334,9 @@ def test_query_returns_sources(test_config, mock_search_results):
 
 def test_query_updates_session_history(test_config):
     """Test that query updates conversation history"""
-    with patch('chromadb.PersistentClient'):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
-            with patch('anthropic.Anthropic') as mock_anthropic:
+    with patch("chromadb.PersistentClient"):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
+            with patch("anthropic.Anthropic") as mock_anthropic:
                 mock_response = Mock()
                 mock_response.content = [Mock(text="Test response", type="text")]
                 mock_response.stop_reason = "end_turn"
@@ -327,12 +357,16 @@ def test_query_updates_session_history(test_config):
 
 def test_query_resets_sources(test_config, mock_search_results):
     """Test that sources are reset after retrieval"""
-    with patch('chromadb.PersistentClient'):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
-            with patch('anthropic.Anthropic') as mock_anthropic:
+    with patch("chromadb.PersistentClient"):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
+            with patch("anthropic.Anthropic") as mock_anthropic:
                 tool_response = Mock()
-                tool_block = Mock(type="tool_use", id="tool_1", name="search_course_content",
-                                input={"query": "test"})
+                tool_block = Mock(
+                    type="tool_use",
+                    id="tool_1",
+                    name="search_course_content",
+                    input={"query": "test"},
+                )
                 tool_response.content = [tool_block]
                 tool_response.stop_reason = "tool_use"
 
@@ -340,7 +374,10 @@ def test_query_resets_sources(test_config, mock_search_results):
                 final_response.content = [Mock(text="Answer", type="text")]
                 final_response.stop_reason = "end_turn"
 
-                mock_anthropic.return_value.messages.create.side_effect = [tool_response, final_response]
+                mock_anthropic.return_value.messages.create.side_effect = [
+                    tool_response,
+                    final_response,
+                ]
 
                 rag = RAGSystem(test_config)
                 rag.vector_store.search = Mock(return_value=mock_search_results)
@@ -357,11 +394,12 @@ def test_query_resets_sources(test_config, mock_search_results):
 # Analytics Tests
 # ============================================================================
 
+
 def test_get_course_analytics(test_config):
     """Test retrieving course analytics"""
-    with patch('chromadb.PersistentClient'):
-        with patch('chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction'):
-            with patch('anthropic.Anthropic'):
+    with patch("chromadb.PersistentClient"):
+        with patch("chromadb.utils.embedding_functions.SentenceTransformerEmbeddingFunction"):
+            with patch("anthropic.Anthropic"):
                 rag = RAGSystem(test_config)
 
                 rag.vector_store.get_course_count = Mock(return_value=3)

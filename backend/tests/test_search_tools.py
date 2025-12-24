@@ -10,15 +10,16 @@ These tests verify:
 - Tool registration and management
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock
-from search_tools import CourseSearchTool, CourseOutlineTool, ToolManager, Tool
-from vector_store import SearchResults, VectorStore
+from unittest.mock import MagicMock, Mock
 
+import pytest
+from search_tools import CourseOutlineTool, CourseSearchTool, Tool, ToolManager
+from vector_store import SearchResults, VectorStore
 
 # ============================================================================
 # CourseSearchTool Tests
 # ============================================================================
+
 
 def test_course_search_tool_definition():
     """Test CourseSearchTool returns correct tool definition"""
@@ -59,9 +60,7 @@ def test_course_search_tool_execute_basic(mock_search_results):
     result = tool.execute(query="RAG systems")
 
     mock_store.search.assert_called_once_with(
-        query="RAG systems",
-        course_name=None,
-        lesson_number=None
+        query="RAG systems", course_name=None, lesson_number=None
     )
     assert "RAG systems" in result or "Introduction to RAG Systems" in result
 
@@ -76,9 +75,7 @@ def test_course_search_tool_execute_with_course_filter(mock_search_results):
     result = tool.execute(query="vector stores", course_name="Introduction")
 
     mock_store.search.assert_called_once_with(
-        query="vector stores",
-        course_name="Introduction",
-        lesson_number=None
+        query="vector stores", course_name="Introduction", lesson_number=None
     )
     assert isinstance(result, str)
 
@@ -92,11 +89,7 @@ def test_course_search_tool_execute_with_lesson_filter(mock_search_results):
     tool = CourseSearchTool(mock_store)
     result = tool.execute(query="retrieval", lesson_number=1)
 
-    mock_store.search.assert_called_once_with(
-        query="retrieval",
-        course_name=None,
-        lesson_number=1
-    )
+    mock_store.search.assert_called_once_with(query="retrieval", course_name=None, lesson_number=1)
 
 
 def test_course_search_tool_execute_with_both_filters(mock_search_results):
@@ -109,9 +102,7 @@ def test_course_search_tool_execute_with_both_filters(mock_search_results):
     result = tool.execute(query="embeddings", course_name="RAG Course", lesson_number=2)
 
     mock_store.search.assert_called_once_with(
-        query="embeddings",
-        course_name="RAG Course",
-        lesson_number=2
+        query="embeddings", course_name="RAG Course", lesson_number=2
     )
 
 
@@ -164,8 +155,8 @@ def test_course_search_tool_tracks_sources(mock_search_results):
     tool.execute(query="test")
 
     assert len(tool.last_sources) > 0
-    assert all('text' in source for source in tool.last_sources)
-    assert all('url' in source for source in tool.last_sources)
+    assert all("text" in source for source in tool.last_sources)
+    assert all("url" in source for source in tool.last_sources)
 
 
 def test_course_search_tool_retrieves_lesson_links(mock_search_results):
@@ -180,7 +171,7 @@ def test_course_search_tool_retrieves_lesson_links(mock_search_results):
     # Should have called get_lesson_link for each result
     assert mock_store.get_lesson_link.called
     # Check sources include URLs
-    assert any(source['url'] == "https://example.com/test-lesson" for source in tool.last_sources)
+    assert any(source["url"] == "https://example.com/test-lesson" for source in tool.last_sources)
 
 
 def test_course_search_tool_empty_results_no_sources():
@@ -198,6 +189,7 @@ def test_course_search_tool_empty_results_no_sources():
 # ============================================================================
 # CourseOutlineTool Tests
 # ============================================================================
+
 
 def test_course_outline_tool_definition():
     """Test CourseOutlineTool returns correct definition"""
@@ -217,13 +209,13 @@ def test_course_outline_tool_execute_found():
     """Test execute when course outline is found"""
     mock_store = Mock(spec=VectorStore)
     mock_outline = {
-        'course_title': 'Test Course',
-        'course_link': 'https://example.com/course',
-        'instructor': 'John Doe',
-        'lessons': [
-            {'lesson_number': 0, 'lesson_title': 'Intro'},
-            {'lesson_number': 1, 'lesson_title': 'Advanced'}
-        ]
+        "course_title": "Test Course",
+        "course_link": "https://example.com/course",
+        "instructor": "John Doe",
+        "lessons": [
+            {"lesson_number": 0, "lesson_title": "Intro"},
+            {"lesson_number": 1, "lesson_title": "Advanced"},
+        ],
     }
     mock_store.get_course_outline.return_value = mock_outline
 
@@ -252,12 +244,10 @@ def test_course_outline_tool_execute_partial_match():
     """Test execute with partial course name (semantic matching)"""
     mock_store = Mock(spec=VectorStore)
     mock_outline = {
-        'course_title': 'Introduction to Machine Learning',
-        'course_link': 'https://example.com/ml',
-        'instructor': 'Jane Smith',
-        'lessons': [
-            {'lesson_number': 0, 'lesson_title': 'Basics'}
-        ]
+        "course_title": "Introduction to Machine Learning",
+        "course_link": "https://example.com/ml",
+        "instructor": "Jane Smith",
+        "lessons": [{"lesson_number": 0, "lesson_title": "Basics"}],
     }
     mock_store.get_course_outline.return_value = mock_outline
 
@@ -273,14 +263,14 @@ def test_course_outline_tool_format_complete():
     """Test formatting with all fields present"""
     mock_store = Mock(spec=VectorStore)
     mock_outline = {
-        'course_title': 'Complete Course',
-        'course_link': 'https://example.com/complete',
-        'instructor': 'Dr. Complete',
-        'lessons': [
-            {'lesson_number': 0, 'lesson_title': 'Lesson Zero'},
-            {'lesson_number': 1, 'lesson_title': 'Lesson One'},
-            {'lesson_number': 2, 'lesson_title': 'Lesson Two'}
-        ]
+        "course_title": "Complete Course",
+        "course_link": "https://example.com/complete",
+        "instructor": "Dr. Complete",
+        "lessons": [
+            {"lesson_number": 0, "lesson_title": "Lesson Zero"},
+            {"lesson_number": 1, "lesson_title": "Lesson One"},
+            {"lesson_number": 2, "lesson_title": "Lesson Two"},
+        ],
     }
     mock_store.get_course_outline.return_value = mock_outline
 
@@ -300,10 +290,10 @@ def test_course_outline_tool_format_no_lessons():
     """Test formatting when course has no lessons"""
     mock_store = Mock(spec=VectorStore)
     mock_outline = {
-        'course_title': 'No Lessons Course',
-        'course_link': 'https://example.com/course',
-        'instructor': 'Teacher',
-        'lessons': []
+        "course_title": "No Lessons Course",
+        "course_link": "https://example.com/course",
+        "instructor": "Teacher",
+        "lessons": [],
     }
     mock_store.get_course_outline.return_value = mock_outline
 
@@ -318,10 +308,8 @@ def test_course_outline_tool_format_missing_optional_fields():
     """Test formatting when optional fields are missing"""
     mock_store = Mock(spec=VectorStore)
     mock_outline = {
-        'course_title': 'Minimal Course',
-        'lessons': [
-            {'lesson_number': 0, 'lesson_title': 'Only Lesson'}
-        ]
+        "course_title": "Minimal Course",
+        "lessons": [{"lesson_number": 0, "lesson_title": "Only Lesson"}],
     }
     # Missing course_link and instructor
     mock_store.get_course_outline.return_value = mock_outline
@@ -337,6 +325,7 @@ def test_course_outline_tool_format_missing_optional_fields():
 # ============================================================================
 # ToolManager Tests
 # ============================================================================
+
 
 def test_tool_manager_register_tool():
     """Test registering a single tool"""
@@ -376,9 +365,9 @@ def test_tool_manager_get_tool_definitions():
     definitions = manager.get_tool_definitions()
 
     assert len(definitions) == 2
-    assert all('name' in defn for defn in definitions)
-    assert any(defn['name'] == 'search_course_content' for defn in definitions)
-    assert any(defn['name'] == 'get_course_outline' for defn in definitions)
+    assert all("name" in defn for defn in definitions)
+    assert any(defn["name"] == "search_course_content" for defn in definitions)
+    assert any(defn["name"] == "get_course_outline" for defn in definitions)
 
 
 def test_tool_manager_get_tool_definitions_empty():
@@ -424,16 +413,11 @@ def test_tool_manager_execute_tool_with_kwargs(mock_search_results):
     manager.register_tool(CourseSearchTool(mock_store))
 
     result = manager.execute_tool(
-        "search_course_content",
-        query="embeddings",
-        course_name="ML Course",
-        lesson_number=3
+        "search_course_content", query="embeddings", course_name="ML Course", lesson_number=3
     )
 
     mock_store.search.assert_called_once_with(
-        query="embeddings",
-        course_name="ML Course",
-        lesson_number=3
+        query="embeddings", course_name="ML Course", lesson_number=3
     )
 
 

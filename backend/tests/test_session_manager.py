@@ -11,12 +11,12 @@ These tests verify:
 """
 
 import pytest
-from session_manager import SessionManager, Message
-
+from session_manager import Message, SessionManager
 
 # ============================================================================
 # Session Creation Tests
 # ============================================================================
+
 
 def test_create_session_returns_id():
     """Test that creating a session returns a session ID"""
@@ -43,6 +43,7 @@ def test_create_multiple_sessions_unique_ids():
 # ============================================================================
 # Message Management Tests
 # ============================================================================
+
 
 def test_add_message():
     """Test adding a single message to history"""
@@ -73,18 +74,23 @@ def test_add_exchange():
     manager = SessionManager()
     session_id = manager.create_session()
 
-    manager.add_exchange(session_id, "What is RAG?", "RAG stands for Retrieval-Augmented Generation.")
+    manager.add_exchange(
+        session_id, "What is RAG?", "RAG stands for Retrieval-Augmented Generation."
+    )
 
     assert len(manager.sessions[session_id]) == 2
     assert manager.sessions[session_id][0].role == "user"
     assert manager.sessions[session_id][0].content == "What is RAG?"
     assert manager.sessions[session_id][1].role == "assistant"
-    assert manager.sessions[session_id][1].content == "RAG stands for Retrieval-Augmented Generation."
+    assert (
+        manager.sessions[session_id][1].content == "RAG stands for Retrieval-Augmented Generation."
+    )
 
 
 # ============================================================================
 # History Limit Tests
 # ============================================================================
+
 
 def test_history_limit_truncation():
     """Test that history is truncated when exceeding max_history"""
@@ -124,6 +130,7 @@ def test_history_preserves_recent_messages():
 # ============================================================================
 # History Retrieval Tests
 # ============================================================================
+
 
 def test_get_conversation_history_formatting():
     """Test conversation history formatting"""
@@ -170,6 +177,7 @@ def test_get_conversation_history_none_session_id():
 # ============================================================================
 # Session Clearing Tests
 # ============================================================================
+
 
 def test_clear_session():
     """Test clearing a session empties message list"""

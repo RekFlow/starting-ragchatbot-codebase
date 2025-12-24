@@ -54,3 +54,71 @@ The application will be available at:
 - Web Interface: `http://localhost:8000`
 - API Documentation: `http://localhost:8000/docs`
 
+## Development
+
+### Code Quality Tools
+
+This project uses several code quality tools to maintain consistency and catch issues early:
+
+- **black**: Code formatter (line length: 100)
+- **isort**: Import sorter (compatible with black)
+- **flake8**: Linting tool with plugins for docstrings and bug detection
+- **mypy**: Static type checker
+
+### Installing Development Dependencies
+
+```bash
+uv sync --extra dev
+```
+
+### Running Code Quality Checks
+
+**Format code automatically:**
+```bash
+./scripts/format.sh
+# or manually:
+uv run black .
+uv run isort .
+```
+
+**Run linting:**
+```bash
+./scripts/lint.sh
+# or manually:
+uv run flake8 backend/ main.py
+uv run mypy backend/ main.py
+```
+
+**Run all quality checks:**
+```bash
+./scripts/quality.sh
+```
+
+This will run:
+1. Black formatting check
+2. isort import sorting check
+3. flake8 linting
+4. mypy type checking
+5. pytest with coverage
+
+### Pre-commit Hooks (Optional)
+
+To automatically run quality checks before each commit:
+
+```bash
+# Install pre-commit (if not using uv)
+pip install pre-commit
+
+# Install the git hooks
+pre-commit install
+
+# Run manually on all files
+pre-commit run --all-files
+```
+
+### Running Tests
+
+```bash
+uv run pytest backend/tests/ -v --cov=backend --cov-report=term-missing
+```
+

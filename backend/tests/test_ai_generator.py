@@ -10,16 +10,17 @@ These tests verify:
 - Error handling
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
-from ai_generator import AIGenerator
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+from ai_generator import AIGenerator
 
 # ============================================================================
 # Initialization Tests
 # ============================================================================
 
-@patch('anthropic.Anthropic')
+
+@patch("anthropic.Anthropic")
 def test_ai_generator_initialization(mock_anthropic):
     """Test AIGenerator initialization creates client"""
     mock_client = Mock()
@@ -32,7 +33,7 @@ def test_ai_generator_initialization(mock_anthropic):
     assert generator.client == mock_client
 
 
-@patch('anthropic.Anthropic')
+@patch("anthropic.Anthropic")
 def test_base_params_configuration(mock_anthropic):
     """Test that base_params are configured correctly"""
     generator = AIGenerator(api_key="test-key", model="claude-sonnet-4")
@@ -46,16 +47,14 @@ def test_base_params_configuration(mock_anthropic):
 # Simple Response Tests
 # ============================================================================
 
+
 def test_generate_response_no_tools(mock_anthropic_client):
     """Test generating response without tools"""
-    with patch('anthropic.Anthropic', return_value=mock_anthropic_client):
+    with patch("anthropic.Anthropic", return_value=mock_anthropic_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
 
         response = generator.generate_response(
-            query="What is RAG?",
-            conversation_history=None,
-            tools=None,
-            tool_manager=None
+            query="What is RAG?", conversation_history=None, tools=None, tool_manager=None
         )
 
         assert isinstance(response, str)
@@ -65,16 +64,13 @@ def test_generate_response_no_tools(mock_anthropic_client):
 
 def test_generate_response_with_history(mock_anthropic_client):
     """Test response generation with conversation history"""
-    with patch('anthropic.Anthropic', return_value=mock_anthropic_client):
+    with patch("anthropic.Anthropic", return_value=mock_anthropic_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
 
         history = "User: Previous question\nAssistant: Previous answer"
 
         response = generator.generate_response(
-            query="Follow-up question",
-            conversation_history=history,
-            tools=None,
-            tool_manager=None
+            query="Follow-up question", conversation_history=history, tools=None, tool_manager=None
         )
 
         # Should include history in system prompt
@@ -84,14 +80,11 @@ def test_generate_response_with_history(mock_anthropic_client):
 
 def test_generate_response_without_history(mock_anthropic_client):
     """Test response generation without history"""
-    with patch('anthropic.Anthropic', return_value=mock_anthropic_client):
+    with patch("anthropic.Anthropic", return_value=mock_anthropic_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
 
         response = generator.generate_response(
-            query="Standalone question",
-            conversation_history=None,
-            tools=None,
-            tool_manager=None
+            query="Standalone question", conversation_history=None, tools=None, tool_manager=None
         )
 
         # System prompt should not include history
@@ -104,17 +97,16 @@ def test_generate_response_without_history(mock_anthropic_client):
 # Tool Usage Tests
 # ============================================================================
 
+
 def test_generate_response_with_tools_not_used(mock_anthropic_client):
     """Test when tools are available but AI doesn't use them"""
-    with patch('anthropic.Anthropic', return_value=mock_anthropic_client):
+    with patch("anthropic.Anthropic", return_value=mock_anthropic_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
 
         tool_definitions = [{"name": "test_tool", "description": "A test tool"}]
 
         response = generator.generate_response(
-            query="Simple question",
-            tools=tool_definitions,
-            tool_manager=Mock()
+            query="Simple question", tools=tool_definitions, tool_manager=Mock()
         )
 
         # Should still return text response
@@ -124,27 +116,29 @@ def test_generate_response_with_tools_not_used(mock_anthropic_client):
         assert "tools" in call_args[1]
 
 
-def test_generate_response_with_tool_use(mock_anthropic_tool_use_response, mock_anthropic_final_response):
+def test_generate_response_with_tool_use(
+    mock_anthropic_tool_use_response, mock_anthropic_final_response
+):
     """Test when AI uses a tool"""
     mock_client = Mock()
     # First call returns tool_use, second returns final answer
     mock_client.messages.create.side_effect = [
         mock_anthropic_tool_use_response,
-        mock_anthropic_final_response
+        mock_anthropic_final_response,
     ]
 
     mock_tool_manager = Mock()
-    mock_tool_manager.execute_tool.return_value = "Tool result: RAG stands for Retrieval-Augmented Generation."
+    mock_tool_manager.execute_tool.return_value = (
+        "Tool result: RAG stands for Retrieval-Augmented Generation."
+    )
 
-    with patch('anthropic.Anthropic', return_value=mock_client):
+    with patch("anthropic.Anthropic", return_value=mock_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
 
         tools = [{"name": "search_course_content"}]
 
         response = generator.generate_response(
-            query="What is RAG?",
-            tools=tools,
-            tool_manager=mock_tool_manager
+            query="What is RAG?", tools=tools, tool_manager=mock_tool_manager
         )
 
         # Should have called API twice (initial + after tool)
@@ -155,7 +149,9 @@ def test_generate_response_with_tool_use(mock_anthropic_tool_use_response, mock_
         assert "Retrieval-Augmented Generation" in response
 
 
-def test_handle_tool_execution_multi_turn(mock_anthropic_tool_use_response, mock_anthropic_final_response):
+def test_handle_tool_execution_multi_turn(
+    mock_anthropic_tool_use_response, mock_anthropic_final_response
+):
     """Test multi-turn tool execution flow"""
     mock_client = Mock()
     mock_client.messages.create.return_value = mock_anthropic_final_response
@@ -163,18 +159,16 @@ def test_handle_tool_execution_multi_turn(mock_anthropic_tool_use_response, mock
     mock_tool_manager = Mock()
     mock_tool_manager.execute_tool.return_value = "Search results here"
 
-    with patch('anthropic.Anthropic', return_value=mock_client):
+    with patch("anthropic.Anthropic", return_value=mock_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
 
         base_params = {
             "messages": [{"role": "user", "content": "Test query"}],
-            "system": "Test system prompt"
+            "system": "Test system prompt",
         }
 
         result = generator._handle_tool_execution(
-            mock_anthropic_tool_use_response,
-            base_params,
-            mock_tool_manager
+            mock_anthropic_tool_use_response, base_params, mock_tool_manager
         )
 
         # Should execute tool and return final text
@@ -199,19 +193,15 @@ def test_handle_multiple_tool_calls(mock_anthropic_final_response):
     mock_tool_manager = Mock()
     mock_tool_manager.execute_tool.return_value = "Tool result"
 
-    with patch('anthropic.Anthropic', return_value=mock_client):
+    with patch("anthropic.Anthropic", return_value=mock_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
 
         base_params = {
             "messages": [{"role": "user", "content": "Complex query"}],
-            "system": "System prompt"
+            "system": "System prompt",
         }
 
-        result = generator._handle_tool_execution(
-            mock_response,
-            base_params,
-            mock_tool_manager
-        )
+        result = generator._handle_tool_execution(mock_response, base_params, mock_tool_manager)
 
         # Should execute both tools (from the initial mock_response)
         assert mock_tool_manager.execute_tool.call_count == 2
@@ -221,12 +211,13 @@ def test_handle_multiple_tool_calls(mock_anthropic_final_response):
 # Error Handling Tests
 # ============================================================================
 
+
 def test_generate_response_api_error():
     """Test handling of Anthropic API errors"""
     mock_client = Mock()
     mock_client.messages.create.side_effect = Exception("API Error: Rate limit exceeded")
 
-    with patch('anthropic.Anthropic', return_value=mock_client):
+    with patch("anthropic.Anthropic", return_value=mock_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
 
         with pytest.raises(Exception) as exc_info:
@@ -242,22 +233,17 @@ def test_generate_response_tool_execution_error(mock_anthropic_tool_use_response
     final_response.content = [Mock(text="I encountered an error with the search.", type="text")]
     final_response.stop_reason = "end_turn"
 
-    mock_client.messages.create.side_effect = [
-        mock_anthropic_tool_use_response,
-        final_response
-    ]
+    mock_client.messages.create.side_effect = [mock_anthropic_tool_use_response, final_response]
 
     mock_tool_manager = Mock()
     # Tool returns error string
     mock_tool_manager.execute_tool.return_value = "Search error: connection failed"
 
-    with patch('anthropic.Anthropic', return_value=mock_client):
+    with patch("anthropic.Anthropic", return_value=mock_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
 
         response = generator.generate_response(
-            query="Test",
-            tools=[{"name": "search"}],
-            tool_manager=mock_tool_manager
+            query="Test", tools=[{"name": "search"}], tool_manager=mock_tool_manager
         )
 
         # Should still return a response (AI interprets the error)
@@ -268,9 +254,10 @@ def test_generate_response_tool_execution_error(mock_anthropic_tool_use_response
 # Message Construction Tests
 # ============================================================================
 
+
 def test_system_prompt_includes_instructions(mock_anthropic_client):
     """Test that system prompt includes instructions"""
-    with patch('anthropic.Anthropic', return_value=mock_anthropic_client):
+    with patch("anthropic.Anthropic", return_value=mock_anthropic_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
 
         generator.generate_response(query="Test")
@@ -284,7 +271,7 @@ def test_system_prompt_includes_instructions(mock_anthropic_client):
 
 def test_system_prompt_with_history(mock_anthropic_client):
     """Test system prompt includes conversation history"""
-    with patch('anthropic.Anthropic', return_value=mock_anthropic_client):
+    with patch("anthropic.Anthropic", return_value=mock_anthropic_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
 
         history = "User: Past question\nAssistant: Past answer"
@@ -300,7 +287,7 @@ def test_system_prompt_with_history(mock_anthropic_client):
 
 def test_message_structure_user_query(mock_anthropic_client):
     """Test user message structure"""
-    with patch('anthropic.Anthropic', return_value=mock_anthropic_client):
+    with patch("anthropic.Anthropic", return_value=mock_anthropic_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
 
         generator.generate_response(query="What is vector search?")
@@ -317,6 +304,7 @@ def test_message_structure_user_query(mock_anthropic_client):
 # Sequential Tool Calling Tests
 # ============================================================================
 
+
 def test_two_sequential_tool_calls(mock_anthropic_two_round_responses):
     """Test Claude makes 2 sequential tool calls"""
     mock_client = Mock()
@@ -325,15 +313,15 @@ def test_two_sequential_tool_calls(mock_anthropic_two_round_responses):
     mock_tool_manager = Mock()
     mock_tool_manager.execute_tool.side_effect = [
         "Course outline: Lesson 1, Lesson 2, Lesson 3",
-        "Search results: Embeddings are vector representations..."
+        "Search results: Embeddings are vector representations...",
     ]
 
-    with patch('anthropic.Anthropic', return_value=mock_client):
+    with patch("anthropic.Anthropic", return_value=mock_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
         response = generator.generate_response(
             query="What does the RAG course say about embeddings?",
             tools=[{"name": "get_course_outline"}, {"name": "search_course_content"}],
-            tool_manager=mock_tool_manager
+            tool_manager=mock_tool_manager,
         )
 
     # Verify 3 API calls (round 1 + round 2 + final)
@@ -357,12 +345,12 @@ def test_max_tool_rounds_limit(mock_anthropic_max_rounds_responses):
     mock_tool_manager = Mock()
     mock_tool_manager.execute_tool.return_value = "Tool result"
 
-    with patch('anthropic.Anthropic', return_value=mock_client):
+    with patch("anthropic.Anthropic", return_value=mock_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
         response = generator.generate_response(
             query="Complex query",
             tools=[{"name": "search_course_content"}],
-            tool_manager=mock_tool_manager
+            tool_manager=mock_tool_manager,
         )
 
     # Should make 4 API calls (2 rounds + overflow tool + final)
@@ -387,15 +375,15 @@ def test_tool_error_allows_continuation(mock_anthropic_two_round_responses):
     mock_tool_manager = Mock()
     mock_tool_manager.execute_tool.side_effect = [
         "No relevant content found.",  # Error result
-        "Found relevant content..."     # Successful retry
+        "Found relevant content...",  # Successful retry
     ]
 
-    with patch('anthropic.Anthropic', return_value=mock_client):
+    with patch("anthropic.Anthropic", return_value=mock_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
         response = generator.generate_response(
             query="Find embeddings",
             tools=[{"name": "search_course_content"}],
-            tool_manager=mock_tool_manager
+            tool_manager=mock_tool_manager,
         )
 
     # Should complete normally despite error
@@ -403,23 +391,25 @@ def test_tool_error_allows_continuation(mock_anthropic_two_round_responses):
     assert "Final answer" in response
 
 
-def test_single_tool_call_backward_compatible(mock_anthropic_tool_use_response, mock_anthropic_final_response):
+def test_single_tool_call_backward_compatible(
+    mock_anthropic_tool_use_response, mock_anthropic_final_response
+):
     """Test single tool call still works (backward compatibility)"""
     mock_client = Mock()
     mock_client.messages.create.side_effect = [
         mock_anthropic_tool_use_response,  # Round 1: tool use
-        mock_anthropic_final_response       # Round 1: text response
+        mock_anthropic_final_response,  # Round 1: text response
     ]
 
     mock_tool_manager = Mock()
     mock_tool_manager.execute_tool.return_value = "Search result"
 
-    with patch('anthropic.Anthropic', return_value=mock_client):
+    with patch("anthropic.Anthropic", return_value=mock_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
         response = generator.generate_response(
             query="What is RAG?",
             tools=[{"name": "search_course_content"}],
-            tool_manager=mock_tool_manager
+            tool_manager=mock_tool_manager,
         )
 
     # Should make 2 API calls (tool use + final response)
@@ -438,17 +428,12 @@ def test_message_structure_with_sequential_tools(mock_anthropic_two_round_respon
     mock_client.messages.create.side_effect = mock_anthropic_two_round_responses
 
     mock_tool_manager = Mock()
-    mock_tool_manager.execute_tool.side_effect = [
-        "Outline result",
-        "Search result"
-    ]
+    mock_tool_manager.execute_tool.side_effect = ["Outline result", "Search result"]
 
-    with patch('anthropic.Anthropic', return_value=mock_client):
+    with patch("anthropic.Anthropic", return_value=mock_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
         response = generator.generate_response(
-            query="Test query",
-            tools=[{"name": "test_tool"}],
-            tool_manager=mock_tool_manager
+            query="Test query", tools=[{"name": "test_tool"}], tool_manager=mock_tool_manager
         )
 
     # Check message structure in second API call (after first tool execution)
@@ -471,19 +456,14 @@ def test_tools_preserved_in_api_calls(mock_anthropic_two_round_responses):
     mock_client.messages.create.side_effect = mock_anthropic_two_round_responses
 
     mock_tool_manager = Mock()
-    mock_tool_manager.execute_tool.side_effect = [
-        "Result 1",
-        "Result 2"
-    ]
+    mock_tool_manager.execute_tool.side_effect = ["Result 1", "Result 2"]
 
     tools = [{"name": "test_tool", "description": "A test tool"}]
 
-    with patch('anthropic.Anthropic', return_value=mock_client):
+    with patch("anthropic.Anthropic", return_value=mock_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
         response = generator.generate_response(
-            query="Test query",
-            tools=tools,
-            tool_manager=mock_tool_manager
+            query="Test query", tools=tools, tool_manager=mock_tool_manager
         )
 
     # Check all API calls except the last had tools parameter
@@ -504,13 +484,13 @@ def test_tools_preserved_in_api_calls(mock_anthropic_two_round_responses):
 
 def test_no_tool_use_direct_answer(mock_anthropic_client):
     """Test Claude can answer without using tools"""
-    with patch('anthropic.Anthropic', return_value=mock_anthropic_client):
+    with patch("anthropic.Anthropic", return_value=mock_anthropic_client):
         generator = AIGenerator(api_key="test-key", model="test-model")
 
         response = generator.generate_response(
             query="What is machine learning?",
             tools=[{"name": "search_course_content"}],
-            tool_manager=Mock()
+            tool_manager=Mock(),
         )
 
     # Should make single API call
