@@ -452,3 +452,123 @@ def sample_chroma_get_response(sample_course):
             'lesson_count': len(sample_course.lessons)
         }]
     }
+
+
+# ============================================================================
+# FastAPI Test Fixtures
+# ============================================================================
+
+@pytest.fixture
+def test_app():
+    """Create a test FastAPI app without static file mounting"""
+    from fastapi import FastAPI, HTTPException, Request
+    from fastapi.middleware.cors import CORSMiddleware
+    from pydantic import BaseModel
+    from typing import List, Optional, Dict
+
+    # Create test app
+    app = FastAPI(title="Course Materials RAG System - Test", root_path="")
+
+    # Add CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Pydantic models (same as in app.py)
+    class QueryRequest(BaseModel):
+        query: str
+        session_id: Optional[str] = None
+
+    class QueryResponse(BaseModel):
+        answer: str
+        sources: List[Dict[str, Optional[str]]]
+        session_id: str
+
+    class CourseStats(BaseModel):
+        total_courses: int
+        course_titles: List[str]
+
+    @app.post("/api/query", response_model=QueryResponse)
+    async def query_documents(request_body: QueryRequest, request: Request):
+        """Process a query and return response with sources"""
+        try:
+            mock_rag = request.app.state.mock_rag
+            session_id = request_body.session_id
+            if not session_id:
+                session_id = mock_rag.session_manager.create_session()
+
+            answer, sources = mock_rag.query(request_body.query, session_id)
+
+            return QueryResponse(
+                answer=answer,
+                sources=sources,
+                session_id=session_id
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/api/courses", response_model=CourseStats)
+    async def get_course_stats(request: Request):
+        """Get course analytics and statistics"""
+        try:
+            mock_rag = request.app.state.mock_rag
+            analytics = mock_rag.get_course_analytics()
+            return CourseStats(
+                total_courses=analytics["total_courses"],
+                course_titles=analytics["course_titles"]
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/")
+    async def root():
+        """Root endpoint for health check"""
+        return {"status": "ok", "message": "RAG System API"}
+
+    # Initialize app state
+    app.state.mock_rag = None
+
+    return app
+
+
+@pytest.fixture
+def mock_rag_system(test_config):
+    """Mock RAG system for API testing"""
+    mock_rag = Mock()
+
+    # Mock session manager
+    mock_rag.session_manager = Mock()
+    mock_rag.session_manager.create_session.return_value = "test-session-123"
+
+    # Mock query method
+    mock_rag.query.return_value = (
+        "This is a test answer about RAG systems.",
+        [
+            {"text": "Source 1 text", "url": "https://example.com/lesson1"},
+            {"text": "Source 2 text", "url": "https://example.com/lesson2"}
+        ]
+    )
+
+    # Mock analytics method
+    mock_rag.get_course_analytics.return_value = {
+        "total_courses": 2,
+        "course_titles": ["Introduction to RAG Systems", "Advanced Machine Learning"]
+    }
+
+    return mock_rag
+
+
+@pytest.fixture
+def api_client(test_app, mock_rag_system):
+    """Create test client with mocked RAG system"""
+    from fastapi.testclient import TestClient
+
+    # Inject mock RAG system into app state
+    test_app.state.mock_rag = mock_rag_system
+
+    client = TestClient(test_app)
+    yield client
